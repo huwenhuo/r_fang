@@ -4,6 +4,12 @@ library(log4r)
 #setwd(resDir)
 cwd = getwd()
 
+mapfile = 'Proj_07813_D_sample_mapping.txt'
+groupfile = 'Proj_07813_D_sample_grouping.txt'
+pairfile = 'Proj_07813_D_sample_pairing.txt'
+
+resDir = 'r_fang' # result folder
+
 species = 'B37' # genome
 wesImpactTarget = 'AgilentExon_51MB_b37_v3' # baits
 assay = 'wes'
