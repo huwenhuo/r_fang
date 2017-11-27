@@ -1,4 +1,9 @@
 pre = 'scc'
+mapfile = 'Proj_07813_D_sample_mapping.txt'
+groupfile = 'Proj_07813_D_sample_grouping.txt'
+pairfile = 'Proj_07813_D_sample_pairing.txt'
+
+resDir = 'r_fang' # result folder
 
 source('configure_dnaseq.R')
 
@@ -32,12 +37,13 @@ for(i in 1:nrow(targets)){
 	}
 	rbind(targets.aln, tmp) -> targets.aln
 }
+rm(tmp)
 targets.aln
 
 ## r_fang/sampleName_group_runID as file folder for each 
 targets.aln[, sgrTag := paste0(sampleName, '_', group, '_', runID)]
-targets.aln[, sgrDir := paste0(initDir, '/', sgrTag)]
-targets.aln[, {system(paste0('mkdir -p ', sgrDir))}, by=1:nrow(targets.aln)]
+targets.aln[, sgrDir := paste0(initDir, '/', sgrTag)] # initDir: resDir/initFiles defined in configure_dnaseq.R
+targets.aln[, {system(paste0('mkdir -p ', sgrDir))}, by=1:nrow(targets.aln)] # create folder for each run
 
 ## zcat fastq
 targets.aln[, fastq1.zcatfile := file.path(sgrDir, sub(".gz", "", fastq1))]
