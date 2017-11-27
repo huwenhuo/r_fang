@@ -1,11 +1,6 @@
 library(data.table)
 library(log4r)
 
-mapfile = 'Proj_07813_D_sample_mapping.txt'
-groupfile = 'Proj_07813_D_sample_grouping.txt'
-pairfile = 'Proj_07813_D_sample_pairing.txt'
-
-resDir = 'r_fang' # result folder
 #setwd(resDir)
 cwd = getwd()
 
