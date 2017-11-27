@@ -1,6 +1,6 @@
 pre = 'scc'
 
-source('~/program/configure_dnaseq.R')
+source('configure_dnaseq.R')
 
 targets = fread(mapfile, header = F)
 ## group == library
