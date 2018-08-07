@@ -1,71 +1,31 @@
+library(log4r)
+library(data.table)
+
 cwd = getwd()
 
-species = 'B37' # genome
-wesImpactTarget = 'AgilentExon_51MB_b37_v3' # baits
-assay = 'wes'
+source(paste0('~/pipeline/configure_dir.R'))
 
-delFiles = F # delete files after each step 
-
-if(!file.exists(groupfile)){
-	stop('groupfile not exist.')
+if(assay == 'methylation'){
+	source('~/program/fun/param.r')
+	initDir = paste0(resDir, '/initFiles')
+	progressDir = paste0(resDir, '/progress')
+	matricsDir = paste0(resDir, '/matrics')
+	fastqcDir = paste0(resDir, '/fastqc')
+	statsDir = paste0(resDir, '/stats')
+	methylDir = paste0(resDir, '/methylDir')
+	system(paste0('mkdir -p ', resDir)) ## r_fang
+	system(paste0('mkdir -p ', progressDir)) ## jobname.done
+	system(paste0('mkdir -p ', matricsDir))  ## collected metrics
+	system(paste0('mkdir -p ', initDir)) 
+	system(paste0('mkdir -p ', fastqcDir)) 
+	system(paste0('mkdir -p ', statsDir)) 
 }
 
-if(!file.exists(mapfile)){
-	stop('mapfile not exist.')
-}
-
-if(!exists('species')){
-	cat('Species must provided\n\n')
-	cat('Environment parameters are not imported!!\n\n')
-	return
-}
-
-if(!exists('wesImpactTarget')){
-	cat('wesImpactTarget must provided\n\n')
-	cat('Environment parameters are not imported!!\n\n')
-	return
-}
-
-statsDir = paste0(resDir, '/stats')
-initDir = paste0(resDir, '/initFiles')
-progressDir = paste0(resDir, '/progress')
-matricsDir = paste0(resDir, '/matrics')
-varDir = paste0(resDir, '/variation')
-haploDir = paste0(varDir, '/haplotypecaller')
-mutectDir = paste0(varDir, '/mutect')
-sniperDir = paste0(varDir, '/somaticsniper')
-facetsDir = paste0(varDir, '/facets')
-strvarDir = paste0(varDir, '/strvar')
-system(paste0('mkdir -p ', resDir)) ## r_fang
-system(paste0('mkdir -p ', statsDir)) ## err std files
-system(paste0('mkdir -p ', progressDir)) ## jobname.done
-system(paste0('mkdir -p ', matricsDir))  ## collected metrics
-system(paste0('mkdir -p ', varDir))  
-system(paste0('mkdir -p ', haploDir)) 
-system(paste0('mkdir -p ', mutectDir)) 
-system(paste0('mkdir -p ', sniperDir)) 
-system(paste0('mkdir -p ', facetsDir)) 
-system(paste0('mkdir -p ', facetsDir, '/sample')) 
-system(paste0('mkdir -p ', strvarDir)) 
-system(paste0('mkdir -p ', initDir)) 
-
-##logfile = paste0('_', resDir, '_log')
-##if(file.exists(logfile)){
-##	stop(paste0(logfile, 'exist, already running?'))
-##}else{
-##	create.logger() -> logger
-##	logfile(logger) = logfile
-##	level(logger) = 'INFO' 
-##	#info(logger, 'message') others like warn(), error(), fatal()
-##}
-
-
-## this configure for the locations for common programs
-## the task.conf under the working directory provide the tasks. 
-## save the input and base as special words here
-## _genome will sub with $genome
-#>Locations
-source(paste0(resDir, '/configure_dir.R'))
+logfile = paste0(cwd, '/', '_', gsub("/", "_", resDir), '_log')
+logfile
+create.logger() -> logger
+logfile(logger) = logfile
+level(logger) = 'INFO' 
 
 ## this for set up @ENV
 path			= '/home/huw/program/homer/bin:/home/huw/local/bin:/home/huw/perl5/CPAN/bin:/home/huw/program/cufflink221/:/home/huw/program/tophat213/:/home/huw/program/bowtie2/:/home/huw/program/bin:/home/huw/program/blat:/home/huw/program/weblogo:/home/huw/program/gs/bin:/home/huw/program/ngsplot:$PATH'
@@ -107,11 +67,111 @@ if(species == 'hybrid') {
 	FP_TG  = paste0(dataDir, "/b37/Agilent51MBExome__b37__FP_tiling_genotypes.txt")
 }
 
-baits_ilist = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_baits.ilist')
-targets_ilist = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_targets.ilist')
-targets_bed = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_targets.bed')
-targets5bp_ilist = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_targets_plus5bp.ilist')
-targets5bp_bed = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_targets_plus5bp.bed')
+if(grepl('hg19', species, ignore.case=T)){
+	   genomeFasta = HG19_FASTA
+	   #bismarkHg19
+	   genomeFAI = HG19_FAI
+}
+
+## configure files
+if(assay == 'dnaseq' & assay.step == 'pipeline'){
+	source('~/program/fun/param.r')
+	pairfile = paste0(resDir, '/', pre, '_sample_pairing.txt')
+	mapfile = paste0(resDir, '/', pre, '_sample_mapping.txt')
+	groupfile = paste0(resDir, '/', pre, '_sample_grouping.txt')
+
+	statsDir = paste0(resDir, '/stats')
+	system(paste0('mkdir -p ', statsDir)) ## err std files
+
+	if(!file.exists(groupfile)){
+		stop('groupfile not exist.')
+	}
+
+	if(!file.exists(mapfile)){
+		stop('mapfile not exist.')
+	}
+
+	if(!exists('species')){
+		cat('Species must provided\n\n')
+		cat('Environment parameters are not imported!!\n\n')
+		return
+	}
+
+	if(!exists('wesImpactTarget')){
+		cat('wesImpactTarget must provided\n\n')
+		cat('Environment parameters are not imported!!\n\n')
+		return
+	}
+
+	wesImpactTarget = 'AgilentExon_51MB_b37_v3' # baits
+	initDir = paste0(resDir, '/initFiles')
+	progressDir = paste0(resDir, '/progress')
+	matricsDir = paste0(resDir, '/matrics')
+	varDir = paste0(resDir, '/variation')
+	haploDir = paste0(varDir, '/haplotypecaller')
+	mutectDir = paste0(varDir, '/mutect')
+	sniperDir = paste0(varDir, '/somaticsniper')
+	facetsDir = paste0(varDir, '/facets')
+	strvarDir = paste0(varDir, '/strvar')
+	system(paste0('mkdir -p ', resDir)) ## r_fang
+	system(paste0('mkdir -p ', progressDir)) ## jobname.done
+	system(paste0('mkdir -p ', matricsDir))  ## collected metrics
+	system(paste0('mkdir -p ', varDir))  
+	system(paste0('mkdir -p ', haploDir)) 
+	system(paste0('mkdir -p ', mutectDir)) 
+	system(paste0('mkdir -p ', sniperDir)) 
+	system(paste0('mkdir -p ', facetsDir)) 
+	system(paste0('mkdir -p ', facetsDir, '/sample')) 
+	system(paste0('mkdir -p ', strvarDir)) 
+	system(paste0('mkdir -p ', initDir)) 
+
+	wesImpactTarget = 'AgilentExon_51MB_b37_v3' # baits
+	baits_ilist = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_baits.ilist')
+	targets_ilist = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_targets.ilist')
+	targets_bed = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_targets.bed')
+	targets5bp_ilist = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_targets_plus5bp.ilist')
+	targets5bp_bed = paste0(targetsDir, '/', wesImpactTarget, '/', wesImpactTarget, '_targets_plus5bp.bed')
+}
+
+## this for set up @ENV
+path			= '/home/huw/program/homer/bin:/home/huw/local/bin:/home/huw/perl5/CPAN/bin:/home/huw/program/cufflink221/:/home/huw/program/tophat213/:/home/huw/program/bowtie2/:/home/huw/program/bin:/home/huw/program/blat:/home/huw/program/weblogo:/home/huw/program/gs/bin:/home/huw/program/ngsplot:$PATH'
+JAVA_HOME 		= '/home/huw/program/jdk7/bin/java'
+JAVA_HOME 		= '/opt/common/CentOS_6-dev/java/jdk1.8.0_31/'
+NGSPLOT 		= '/home/huw/program/ngsplot'
+TMPDIR			= '/scratch/huw'
+
+if(species == 'mm9') {
+	genomeFasta = MM9_FASTA
+	genomeBWA =  MM9_BWA_INDEX
+	genomeFAI = MM9_FAI
+	DB_SNP = "" 
+	FP_INT = "" 
+	FP_TG  = ""
+}
+
+if(species == 'mm10_custom') {
+	genomeFasta = MM10_CUSTOM_FASTA
+	genomeBWA =  MM10_BWA_INDEX
+	DB_SNP = paste0(dataDir, "/mm10/mm10_snp142.vcf") 
+	FP_INT = "" 
+	FP_TG  = ""
+}
+
+if(species == 'mm10') {
+	genomeFasta = MM10_FASTA
+	genomeBWA =  MM10_BWA_INDEX
+	DB_SNP = paste0(dataDir, "/mm10/mm10_snp142.vcf") 
+	FP_INT = "" 
+	FP_TG  = ""
+}
+
+if(species == 'hybrid') {
+	genomeFasta = B37_MM10_HYBRID_FASTA
+	#genomeBWA =  B37_BWA_INDEX
+	DB_SNP = paste0(dataDir, "/b37/dbsnp_138.b37.vcf")
+	FP_INT = paste0(dataDir, "/b37/Agilent51MBExome__b37__FP_intervals.list")
+	FP_TG  = paste0(dataDir, "/b37/Agilent51MBExome__b37__FP_tiling_genotypes.txt")
+}
 
 if(grepl('hg19', species, ignore.case=T)){
 	   genomeFasta = HG19_FASTA
@@ -129,7 +189,7 @@ if(grepl('hg19', species, ignore.case=T)){
 	   COSMIC = paste0(dataDir, "/hg19/CosmicCodingMuts_v67_20131024.vcf");
 }
 
-if(grep('b37', species, ignore.case=T)){
+if(grepl('b37', species, ignore.case=T)){
 	genomeFasta = B37_FASTA
 	genomeBWA =  B37_BWA_INDEX
 	genomeFAI = B37_FAI
@@ -169,46 +229,6 @@ exe.jobs = function(jobnames=NULL, logger=logger, outputs=NULL, size=2000){
 			info(logger, paste0('return value for the above cmd: ', ret))
 		}
 	}
-}
-
-deldir = function(ddir=NULL){
-	if(!is.null(ddir) & dir.exists(ddir)){
-		msg = paste0('deleting folder ', ddir)
-		warn(logger, msg)
-		system(paste0('rm -rf ', ddir))
-		return(0)
-	}
-	return(1)
-}
-
-delfile.2 = function(dfile=NULL, logger){
-	if(!is.null(dfile) & file.exists(dfile)){
-		msg = paste0('deleting file ', dfile)
-		warn(logger, msg)
-		system(paste0('rm -f ', dfile))
-		return(0)
-	}
-	return(1)
-}
-
-delfile = function(dfile=NULL, logger, cfile=NULL, s){
-	if(!is.null(dfile) & !file.exists(dfile)){
-		msg = paste0(dfile, ' not exists')
-		info(logger, msg);stop(msg)
-	}
-	if(!is.null(cfile) & !file.exists(cfile)){
-		msg = paste0(cfile, ' not exists')
-		info(logger, msg);stop(msg)
-	}else if(file.size(cfile) < s){
-		msg = paste0(cfile, ' is too small')
-		info(logger, msg);stop(msg)
-	}else{
-		msg = paste0('deleting file ', dfile)
-		warn(logger, msg)
-		system(paste0('rm -f ', dfile))
-		return(0)
-	}
-	return(1)
 }
 
 bjoblist = function(){
@@ -300,27 +320,26 @@ clusters		= 'LSF'
 ##motifHomerFinder	= 'motifout'
 ##htseqcount		= 'htseqcount'
 
-bsub.head2 = function(jobname, mem, cpu, We, cwd, postdone, submit, resDir = 'r_fang'){
-	cmd = paste0(BSUB, " -J ", jobname, " -e ", statsDir, '/', jobname, ".err -o ", statsDir, '/', jobname, ".std ")
-	cmd = paste0(cmd, " -cwd ", cwd, ' -We ', We, ' -R "rusage[mem=', mem, ']" -R "rusage[iounits=0]" -n ', cpu)
-	if(!missing(postdone)){
-		postdone = unlist(strsplit(postdone, split=" "))
-		for( i in 1:length(postdone)){
-			cmd = paste0(cmd, ' -w "post_done(', postdone[i], ')" ')
-		}
+checkfiles = function(files, sizes){
+	if(!(all(file.exists(files))) & !(all(file.size(files) > sizes))){
+		msg = paste0('files not passed check: ', paste(files, collapse=' '))
+		fatal(logger, msg)
+		stop(msg)
 	}
-	if(!missing(submit)){
-		submit2 = unlist(strsplit(submit, " "))
-		submit3 = paste0('ls ', cwd, '/progress/', resDir, '/', submit2)
-		submit4 = paste0(submit3, collapse = ' && ')
-		cmd = paste0(cmd, ' -E "', submit4, '"')
-	}
-	cmd
 }
 
-bsub.head = function(jobname, mem, cpu, We, cwd, postdone, submit, resDir = 'r_fang'){
+bsub.head = function(jobname, mem, cpu, We='', cwd='', postdone=NULL, statsDir = ''){
+	if(We == '') We = '1:55'
+	if(cwd == '') cwd = getwd()
+	if(statsDir == ''){
+		if(dir.exists(paste0(resDir, '/stats'))){
+			statsDir = paste0(resDir, '/stats')
+		}else{
+			statsDir = '.'
+		}
+	}
 	cmd = paste0(BSUB, " -J ", jobname, " -e ", statsDir, '/', jobname, ".err -o ", statsDir, '/', jobname, ".std ")
-	cmd = paste0(cmd, " -cwd ", cwd, ' -We ', We, ' -R "rusage[mem=', mem, ']" -R "rusage[iounits=0]" -n ', cpu)
+	cmd = paste0(cmd, " -cwd ", cwd, ' -We ', We, ' -R "rusage[mem=', mem, ']" -R "rusage[iounits=0]" -n ', cpu, ' ')
 	if(!missing(postdone)){
 		postdone = unlist(strsplit(postdone, split=" "))
 		runningjobs = bjoblist()
@@ -330,19 +349,51 @@ bsub.head = function(jobname, mem, cpu, We, cwd, postdone, submit, resDir = 'r_f
 			}
 		}
 	}
-	if(!missing(submit)){
-		submit2 = unlist(strsplit(submit, " "))
-		submit3 = paste0('ls ', cwd, '/progress/', resDir, '/', submit2)
-		submit4 = paste0(submit3, collapse = ' && ')
-		cmd = paste0(cmd, ' -E "', submit4, '"')
-	}
 	cmd
 }
 
-checkfiles = function(files, sizes){
-	if(!(all(file.exists(files))) & !(all(file.size(files) > sizes))){
-		msg = paste0('files not passed check: ', paste(files, collapse=' '))
-		fatal(logger, msg)
-		stop(msg)
+## below could import from ~/program/fun/param.r
+simple_table = data.table(
+			  simple_val = c('Truncating', 'Truncating', 'Inframe', 'Inframe', 
+					 'Missense_Mutation', 'Truncating', 'Inframe', 
+					 'Inframe', 'Inframe', 'Inframe', 'Inframe'),
+			  simple_name = c('Frame_Shift_Del', 'Frame_Shift_Ins', 'In_Frame_Del', 'In_Frame_Ins', 
+					  'Missense_Mutation','Nonsense_Mutation', 'Nonstop_Mutation', 
+					  'Silent', 'Splice_Region', 'Splice_Site', 'Translation_Start_Site')
+			  )
+simple_table
+setkey(simple_table, 'simple_name')
+color_table  = data.table(
+			 color_index = c("Missense_Mutation Oncogenic",
+					 "Truncating Oncogenic",
+					 "Inframe Oncogenic",
+					 "Missense_Mutation Passage",
+					 "Truncating Passage",
+					 "Inframe Passage") ,
+			 color_value = c("#bebebe", 
+					 "#000000", 
+					 "#993404", 
+					 adjustcolor("#bebebe", alpha.f=0.6), 
+					 adjustcolor("#000000", alpha.f=0.6),
+					 adjustcolor("#993404", alpha.f=0.6)) 
+			 )
+color_table
+setkey(color_table, 'color_index')
+
+rsem.fpkm = function(rsem){
+	rsem$fpkm = rsem$counts * 10^9 / rsem$length
+	rsem$fpkm = sweep(rsem$fpkm, 2, colSums(rsem$counts), '/')
+	rsem
+}
+
+del.files = function(files, logger){
+	if(all(file.exists(files))){
+		for(i in 1:nrow(files)){
+			info(logger, paste('deleting file:', files[i]))
+			system(paste0('rm ', files[i]))
+		}
+	}else{
+		info(logger, paste0('Not all files can be found. Nothing are deleted!'))
 	}
 }
+
